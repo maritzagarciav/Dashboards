@@ -1,0 +1,425 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProjectPlace Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F2F3F5;
+  --card-bg: #FFFFFF;
+  --border: #E4E7EB;
+  --text: #3B3F46;
+  --text-light: #8A9099;
+  --shadow: 0 1px 4px rgba(0,0,0,0.06);
+  --c1: #2171C4;
+  --c2: #5BC0EB;
+  --c3: #36B5A0;
+  --c4: #4BC86E;
+  --c5: #F5C242;
+  --c6: #F09030;
+  --c7: #E85D75;
+  --c8: #E8368F;
+  --c9: #7B68B4;
+  --c10: #2AABBF;
+  --done: #4BC86E;
+  --progress: #2171C4;
+  --blocked: #E85D75;
+  --overdue: #F09030;
+  --not-started: #C5CAD0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: 'Open Sans', Arial, sans-serif; font-size: 13px; }
+.header { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 16px; font-weight: 700; color: var(--text); }
+.header .date { font-size: 12px; color: var(--text-light); }
+.container { max-width: 1060px; margin: 0 auto; padding: 16px; }
+.tabs { display: flex; gap: 12px; margin-bottom: 16px; overflow-x: auto; }
+.tab { background: var(--card-bg); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 16px; font-size: 11px; cursor: pointer; white-space: nowrap; }
+.tab.active { background: var(--c1); color: white; font-weight: 700; border-color: var(--c1); }
+.kpis { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.kpi { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow); padding: 12px; flex: 1; min-width: 150px; border-left: 3px solid; }
+.kpi .value { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.kpi .label { font-size: 10px; color: var(--text-light); text-transform: uppercase; }
+.charts { display: flex; gap: 16px; margin-bottom: 16px; }
+.chart-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow); padding: 16px; flex: 1; }
+.chart-title { font-size: 13px; font-weight: 700; color: var(--text); text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+.bar-chart { height: 28px; display: flex; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+.bar-segment { display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 700; min-width: 22px; }
+.donut { width: 110px; height: 110px; border-radius: 50%; margin: 0 auto 12px; position: relative; }
+.donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65px; height: 65px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 10px; color: var(--text-light); }
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+.tables { display: flex; gap: 16px; margin-bottom: 16px; }
+.table-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow); padding: 16px; flex: 1; border-left: 3px solid; }
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+thead { background: var(--bg); color: var(--text); font-weight: 700; text-transform: uppercase; font-size: 10px; }
+th, td { padding: 5px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+.table-scroll { max-height: 200px; overflow-y: auto; }
+.pill { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+.pill.blocked { background: #FDEEF0; color: var(--blocked); }
+.pill.overdue { background: #FEF3E6; color: var(--overdue); }
+.pill.completed { background: #E9F7ED; color: var(--done); }
+.pill.upcoming { background: #E8F2FA; color: var(--c1); }
+.pill.started { background: #E8F2FA; color: var(--c1); }
+.pill.not-started { background: #F2F3F5; color: var(--text-light); }
+.pill.finished { background: #E9F7ED; color: var(--done); }
+.assignments-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow); padding: 16px; border-left: 3px solid var(--c1); margin-bottom: 16px; }
+.assignments-scroll { max-height: 250px; overflow-y: auto; }
+.overdue-row { background: #FEF3E6; }
+.empty { color: var(--text-light); font-style: italic; text-align: center; padding: 20px; }
+.footer { background: var(--card-bg); border-top: 1px solid var(--border); padding: 10px; text-align: center; font-size: 10px; color: var(--text-light); margin-top: 20px; }
+.completion-circle { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-top: 4px; }
+</style>
+</head>
+<body>
+<script>
+const DATA = [
+  {
+    id: "242880267", name: "Database Migration Project - PPM Pro Owned", status: "active", owner: "Anthony Geld", members: 18,
+    cards: { total: 31, byStatus: {"Backlog":20,"Assigned To":3,"Working On":1,"Done":6}, blocked: [], overdue: [
+      {name:"Period Cost and Benefits Realization Review",assignee:"Liz Carter",due:"2025-07-19",status:"Not Started"},
+      {name:"Benefits Realization Review",assignee:"Stephen Hill",due:"2025-07-11",status:"Not Started"},
+      {name:"Project Charter",assignee:"Paul Manager",due:"2025-07-02",status:"Not Started"},
+      {name:"Risk Register",assignee:"Jim Harris",due:"2025-07-08",status:"Started"},
+      {name:"Product or Service Creation?",assignee:"Liz Carter",due:"2025-07-16",status:"Started"},
+      {name:"Data Migration",assignee:"",due:"2025-07-04",status:"Finished"}
+    ]},
+    activities: { total: 17, byStatus: {"Not Done":17}, overdue: [
+      {name:"Gate 0",assignee:"",due:"2025-04-07"},{name:"Business Case & Planning*",assignee:"",due:"2025-04-07"},
+      {name:"Gate 1",assignee:"",due:"2025-04-08"},{name:"Requirements Specification & Design*",assignee:"",due:"2025-05-23"},
+      {name:"Functional Requirements",assignee:"",due:"2025-05-23"}
+    ]},
+    milestones: [],
+    assignments: [
+      {person:"Jim Harris",type:"card",name:"Risk Register",due:"2025-07-08",status:"started"},
+      {person:"Liz Carter",type:"card",name:"Period Cost and Benefits Realization Review",due:"2025-07-19",status:"not-started"},
+      {person:"Liz Carter",type:"card",name:"Product or Service Creation?",due:"2025-07-16",status:"started"},
+      {person:"Paul Manager",type:"card",name:"Project Charter",due:"2025-07-02",status:"not-started"},
+      {person:"Paul Manager",type:"card",name:"Project Management Plans",due:"2025-06-12",status:"started"},
+      {person:"Paul Manager",type:"card",name:"Kick-Off Meeting Minutes",due:"",status:"finished"},
+      {person:"Stephen Hill",type:"card",name:"Benefits Realization Review",due:"2025-07-11",status:"not-started"},
+      {person:"Stephen Hill",type:"card",name:"Solution Performance Analysis",due:"2025-08-27",status:"started"},
+      {person:"Stephen Hill",type:"card",name:"Business process Mapping",due:"",status:"finished"}
+    ]
+  },
+  {
+    id: "373745086", name: "CoPilot Rollout - PPM Pro Owned", status: "active", owner: "Anthony Geld", members: 19,
+    cards: { total: 21, byStatus: {"Planned":2,"Working On":2,"Final Approval":1,"Done":16}, blocked: [
+      {name:"Define Acceptance Criteria",assignee:"Allen Partin",due:"2026-02-27",status:"Finished"},
+      {name:"Traceability Mapping",assignee:"Allen Partin",due:"2026-01-31",status:"Finished"}
+    ], overdue: []},
+    activities: { total: 34, byStatus: {"Not Done":21,"Done":13}, overdue: [
+      {name:"Project Kickoff",assignee:"",due:"2026-01-01"},{name:"Initiation Phase",assignee:"",due:"2026-01-06"},
+      {name:"Concept Development",assignee:"",due:"2026-01-01"},{name:"Scope Statement",assignee:"",due:"2026-01-02"},
+      {name:"Concept Proposal",assignee:"",due:"2026-01-05"},{name:"Project Charter",assignee:"",due:"2026-01-06"},
+      {name:"Project Management Plan",assignee:"",due:"2026-01-07"},{name:"Risk Management Plan",assignee:"",due:"2026-01-07"},
+      {name:"Change Management Plan",assignee:"",due:"2026-01-07"},{name:"Communication Management Plan",assignee:"",due:"2026-01-08"},
+      {name:"Staffing Management Plan",assignee:"",due:"2026-01-09"},{name:"Review Plan",assignee:"",due:"2026-01-22"}
+    ]},
+    milestones: [{name:"Closeout",due:"2026-06-25",status:"upcoming",owner:""}],
+    assignments: [
+      {person:"Allen Partin",type:"card",name:"QA Environment Initiation",due:"2026-02-25",status:"started"},
+      {person:"Allen Partin",type:"card",name:"Requirements Confirmed",due:"2026-04-22",status:"started"},
+      {person:"Allen Partin",type:"card",name:"Something Interesting Task",due:"2026-03-22",status:"finished"},
+      {person:"Allen Partin",type:"card",name:"Validate Requirements",due:"",status:"finished"},
+      {person:"Allen Partin",type:"card",name:"Define Acceptance Criteria",due:"2026-02-27",status:"finished"},
+      {person:"Allen Partin",type:"card",name:"Traceability Mapping",due:"2026-01-31",status:"finished"},
+      {person:"Allen Partin",type:"card",name:"Conduct Feasibility Analysis",due:"2026-02-27",status:"finished"},
+      {person:"Ben Hood",type:"card",name:"UX Design",due:"",status:"finished"},
+      {person:"Ben Hood",type:"card",name:"Answer RFP",due:"",status:"finished"},
+      {person:"Edwin Lindholm",type:"card",name:"Requirements Confirmed",due:"2026-04-22",status:"started"},
+      {person:"Stephen Hill",type:"card",name:"Set up & Launch social media Ads",due:"2026-03-03",status:"not-started"},
+      {person:"Stephen Hill",type:"card",name:"New Deliverable",due:"2026-01-31",status:"finished"},
+      {person:"Stephen Hill",type:"card",name:"Document Requirements",due:"",status:"finished"},
+      {person:"Stephen Hill",type:"card",name:"Define Business Objectives",due:"2026-04-14",status:"finished"},
+      {person:"Stephen Hill",type:"card",name:"Test System Setup",due:"2026-03-31",status:"finished"},
+      {person:"Stephen Hill",type:"card",name:"Gather Requirements",due:"",status:"finished"},
+      {person:"Stephen Hill",type:"card",name:"Stakeholder Identification",due:"",status:"finished"}
+    ]
+  },
+  {
+    id: "243208664", name: "Mobile Platform Migration Project - PP Owned", status: "active", owner: "Anthony Geld", members: 20,
+    cards: { total: 36, byStatus: {"Backlog":9,"Assigned To":4,"Working On":4,"Review":3,"Done":16}, blocked: [
+      {name:"Task 5",assignee:"Stephen Hill",due:"2025-08-29",status:"Started"}
+    ], overdue: [
+      {name:"Task 5",assignee:"Stephen Hill",due:"2025-08-29",status:"Started"},
+      {name:"Requirements Specification",assignee:"",due:"2024-11-26",status:"Finished"}
+    ]},
+    activities: { total: 17, byStatus: {"Not Done":16,"Done":1}, overdue: [
+      {name:"Gate 0",assignee:"",due:"2025-10-12"},{name:"Business Case & Planning*",assignee:"",due:"2026-01-04"},
+      {name:"Gate 1",assignee:"",due:"2026-01-29"},{name:"Requerimients Specification & Design*",assignee:"",due:"2026-03-30"},
+      {name:"Gate 2",assignee:"",due:"2026-04-02"},{name:"Untitled activity",assignee:"",due:"2026-02-05"}
+    ]},
+    milestones: [
+      {name:"Gate 0",due:"2025-10-12",status:"completed",owner:""},{name:"Gate 1",due:"2026-01-29",status:"overdue",owner:""},
+      {name:"Gate 2",due:"2026-04-02",status:"overdue",owner:""},{name:"Gate 3",due:"2026-06-18",status:"upcoming",owner:""},
+      {name:"Gate 4 - GO LIVE",due:"2026-11-03",status:"upcoming",owner:""},{name:"Gate 5 - Project Cost & Benefits Analysis",due:"2027-03-21",status:"upcoming",owner:""},
+      {name:"Gate 6 - Project Complete",due:"2027-08-06",status:"upcoming",owner:""}
+    ],
+    assignments: [
+      {person:"AJ Shavell",type:"card",name:"User Group B Training",due:"2026-02-06",status:"not-started"},
+      {person:"AJ Shavell",type:"card",name:"User Group A Training",due:"2026-01-24",status:"started"},
+      {person:"AJ Shavell",type:"card",name:"Admin Training",due:"2026-01-24",status:"started"},
+      {person:"AJ Shavell",type:"card",name:"Customization & Integration",due:"",status:"started"},
+      {person:"AJ Shavell",type:"card",name:"Quality Management Plan",due:"",status:"finished"},
+      {person:"Haley Brown",type:"card",name:"Quality Assurance Baseline",due:"2026-05-22",status:"not-started"},
+      {person:"Haley Brown",type:"card",name:"Project Survey",due:"",status:"not-started"},
+      {person:"Haley Brown",type:"card",name:"Action Item 5",due:"2025-11-06",status:"started"},
+      {person:"Haley Brown",type:"card",name:"Updated Risk Register",due:"2026-01-24",status:"started"},
+      {person:"Haley Brown",type:"card",name:"Customer Survery",due:"2026-01-31",status:"started"},
+      {person:"Haley Brown",type:"card",name:"Product or Service Creation?",due:"2026-02-06",status:"started"},
+      {person:"Haley Brown",type:"card",name:"System Set Up",due:"2026-01-31",status:"started"},
+      {person:"Haley Brown",type:"card",name:"checklist item 1",due:"2025-12-12",status:"finished"},
+      {person:"Jason Waugh",type:"card",name:"Design Documentation*",due:"",status:"finished"},
+      {person:"Jason Waugh",type:"card",name:"Complete Migration",due:"2025-12-20",status:"finished"},
+      {person:"Liz Carter",type:"card",name:"Risk Register",due:"",status:"started"},
+      {person:"Liz Carter",type:"card",name:"Business Case*",due:"",status:"finished"},
+      {person:"Liz Carter",type:"card",name:"Stakeholder Analysis",due:"",status:"finished"},
+      {person:"Paul Manager",type:"card",name:"Project Charter",due:"",status:"finished"},
+      {person:"Paul Manager",type:"card",name:"Project Management Plan",due:"",status:"finished"},
+      {person:"Paul Manager",type:"card",name:"Kick-Off Meeting Minutes",due:"",status:"finished"},
+      {person:"Stephen Hill",type:"card",name:"Period Cost and Benefits Realization Review",due:"2025-12-19",status:"not-started"},
+      {person:"Stephen Hill",type:"card",name:"Solution Performance Analysis",due:"2025-12-20",status:"not-started"},
+      {person:"Stephen Hill",type:"card",name:"Design Doc",due:"2025-12-26",status:"started"},
+      {person:"Stephen Hill",type:"card",name:"Task 5",due:"2025-08-29",status:"started"},
+      {person:"Stephen Hill",type:"card",name:"Benefits Realization Review",due:"",status:"finished"}
+    ]
+  },
+  {
+    id: "525840402", name: "SW Implementation Initiative", status: "active", owner: "Stephen Hill", members: 4,
+    cards: { total: 14, byStatus: {"Planned":3,"Working On":3,"Final Approval":1,"Done":7}, blocked: [
+      {name:"Answer RFP",assignee:"Scott Secora",due:"2025-01-25",status:"Finished"}
+    ], overdue: [
+      {name:"Database API testing",assignee:"Maritza Garcia",due:"2025-01-31",status:"Not Started"},
+      {name:"Create SOW",assignee:"Stephen Hill",due:"2025-12-25",status:"Started"},
+      {name:"New Risk",assignee:"Scott Secora",due:"2025-01-29",status:"Started"},
+      {name:"Operational Task #1",assignee:"Scott Secora",due:"2025-01-27",status:"Started"},
+      {name:"Answer RFP",assignee:"Scott Secora",due:"2025-01-25",status:"Finished"}
+    ]},
+    activities: { total: 42, byStatus: {"Not Done":41,"Done":1}, overdue: [
+      {name:"Project Kickoff",assignee:"",due:"2025-01-26"},{name:"Kickoff Meeting and SOW Confirmed",assignee:"",due:"2025-01-26"},
+      {name:"Initiation Phase",assignee:"",due:"2025-02-04"},{name:"Initiation Milestone",assignee:"",due:"2025-01-27"},
+      {name:"Concept Development",assignee:"",due:"2025-01-28"},{name:"Milestone #1",assignee:"",due:"2025-01-28"},
+      {name:"Scope Statement",assignee:"",due:"2025-01-29"},{name:"Concept Proposal",assignee:"",due:"2025-02-03"},
+      {name:"Project Charter",assignee:"",due:"2025-02-04"},{name:"Untitled activity",assignee:"",due:"2025-02-04"},
+      {name:"Planning Phase",assignee:"",due:"2025-04-25"},{name:"Project Management Plan",assignee:"",due:"2025-02-05"},
+      {name:"Risk Management Plan",assignee:"",due:"2025-02-10"},{name:"Change Management Plan",assignee:"",due:"2025-02-11"},
+      {name:"Communication Management Plan",assignee:"",due:"2025-02-12"},{name:"Staffing Management Plan",assignee:"",due:"2025-02-13"},
+      {name:"Review Plan",assignee:"",due:"2025-02-14"},{name:"Requirements Analysis",assignee:"",due:"2025-03-30"},
+      {name:"Test Master Plan",assignee:"",due:"2025-04-14"},{name:"System Design Document",assignee:"",due:"2025-04-15"},
+      {name:"Conversion Plan",assignee:"",due:"2025-04-16"},{name:"Implementation Plan",assignee:"",due:"2025-04-21"},
+      {name:"Operations Manual",assignee:"",due:"2025-04-22"},{name:"System Administration Manual",assignee:"",due:"2025-04-23"},
+      {name:"Maintenance Manual",assignee:"",due:"2025-04-24"},{name:"Training Plan",assignee:"",due:"2025-04-25"},
+      {name:"User Manual",assignee:"",due:"2025-04-28"},{name:"Untitled activity",assignee:"",due:"2025-04-28"},
+      {name:"Development Milestone",assignee:"",due:"2025-04-29"}
+    ]},
+    milestones: [
+      {name:"Kickoff Meeting and SOW Confirmed",due:"2025-01-26",status:"completed",owner:""},{name:"Initiation Milestone",due:"2025-01-27",status:"overdue",owner:""},
+      {name:"Milestone #1",due:"2025-01-28",status:"overdue",owner:""},{name:"Development Milestone",due:"2025-04-29",status:"overdue",owner:""},
+      {name:"Closeout",due:"2025-07-19",status:"upcoming",owner:""}
+    ],
+    assignments: [
+      {person:"Maritza Garcia",type:"card",name:"Database API testing",due:"2025-01-31",status:"not-started"},
+      {person:"Stephen Hill",type:"card",name:"Create SOW",due:"2025-12-25",status:"started"},
+      {person:"Stephen Hill",type:"card",name:"Core System Review",due:"2025-09-13",status:"started"},
+      {person:"Stephen Hill",type:"card",name:"Requirements Approval",due:"2025-02-11",status:"finished"},
+      {person:"Stephen Hill",type:"card",name:"New Card for Liam",due:"2025-01-31",status:"finished"},
+      {person:"Scott Secora",type:"card",name:"Op Task #2",due:"",status:"not-started"},
+      {person:"Scott Secora",type:"card",name:"New Risk",due:"2025-01-29",status:"started"},
+      {person:"Scott Secora",type:"card",name:"Operational Task #1",due:"2025-01-27",status:"started"},
+      {person:"Scott Secora",type:"card",name:"Customer Review and Approval",due:"",status:"finished"},
+      {person:"Scott Secora",type:"card",name:"Answer RFP",due:"2025-01-25",status:"finished"}
+    ]
+  }
+];
+
+function safeCount(val) {
+  if (Array.isArray(val)) return val.length;
+  if (val && typeof val === 'object') return Object.keys(val).length;
+  return typeof val === 'number' ? val : 0;
+}
+
+function selectWorkspace(idx) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', i === idx + 1);
+  });
+
+  let ws;
+  if (idx === -1) {
+    ws = {
+      cards: { total: 0, byStatus: {}, blocked: [], overdue: [] },
+      activities: { total: 0, byStatus: {}, overdue: [] },
+      milestones: [],
+      assignments: []
+    };
+    DATA.forEach(d => {
+      ws.cards.total += safeCount(d.cards.total);
+      ws.cards.blocked = ws.cards.blocked.concat(d.cards.blocked);
+      ws.cards.overdue = ws.cards.overdue.concat(d.cards.overdue);
+      ws.activities.total += safeCount(d.activities.total);
+      ws.activities.overdue = ws.activities.overdue.concat(d.activities.overdue);
+      ws.milestones = ws.milestones.concat(d.milestones);
+      ws.assignments = ws.assignments.concat(d.assignments);
+      Object.keys(d.cards.byStatus).forEach(k => {
+        ws.cards.byStatus[k] = (ws.cards.byStatus[k] || 0) + d.cards.byStatus[k];
+      });
+      Object.keys(d.activities.byStatus).forEach(k => {
+        ws.activities.byStatus[k] = (ws.activities.byStatus[k] || 0) + d.activities.byStatus[k];
+      });
+    });
+  } else {
+    ws = DATA[idx];
+  }
+
+  const totalCards = safeCount(ws.cards.total);
+  const blockedCount = safeCount(ws.cards.blocked);
+  const overdueCount = safeCount(ws.cards.overdue) + safeCount(ws.activities.overdue);
+  const totalAct = safeCount(ws.activities.total);
+  const doneAct = ws.activities.byStatus['Done'] || ws.activities.byStatus['Completed'] || 0;
+  const openAct = totalAct - doneAct;
+  const milestonesCount = safeCount(ws.milestones);
+  const doneCards = ws.cards.byStatus['Done'] || 0;
+  const completionPct = totalCards > 0 ? Math.round((doneCards / totalCards) * 100) : 0;
+
+  document.getElementById('kpi-cards').innerHTML = totalCards;
+  document.getElementById('kpi-blocked').innerHTML = blockedCount;
+  document.getElementById('kpi-overdue').innerHTML = overdueCount;
+  document.getElementById('kpi-activities').innerHTML = openAct;
+  document.getElementById('kpi-milestones').innerHTML = milestonesCount;
+  document.getElementById('kpi-completion').innerHTML = `<div class="completion-circle" style="background: conic-gradient(var(--done) ${completionPct}%, var(--border) 0);">${completionPct}%</div>`;
+
+  let barHtml = '';
+  let legendHtml = '';
+  const statusOrder = ['Backlog', 'To Do', 'Planned', 'Assigned To', 'Working On', 'In Progress', 'Review', 'Final Approval', 'Done', 'Finished'];
+  const statusColors = {'Backlog': 'var(--not-started)', 'To Do': 'var(--not-started)', 'Planned': 'var(--not-started)', 'Assigned To': 'var(--c1)', 'Working On': 'var(--c1)', 'In Progress': 'var(--c1)', 'Review': 'var(--c5)', 'Final Approval': 'var(--c5)', 'Done': 'var(--done)', 'Finished': 'var(--done)'};
+  statusOrder.forEach(s => {
+    const count = ws.cards.byStatus[s] || 0;
+    if (count > 0) {
+      const pct = (count / totalCards * 100);
+      barHtml += `<div class="bar-segment" style="width:${pct}%;background:${statusColors[s]}">${count}</div>`;
+      legendHtml += `<div class="legend-item"><div class="legend-dot" style="background:${statusColors[s]}"></div>${s} (${count})</div>`;
+    }
+  });
+  document.getElementById('bar-chart').innerHTML = barHtml || '<div class="empty">No cards</div>';
+  document.getElementById('bar-legend').innerHTML = legendHtml;
+
+  const actStatuses = Object.keys(ws.activities.byStatus);
+  let donutBg = 'var(--border)';
+  let donutLegend = '';
+  if (actStatuses.length > 0) {
+    const actColors = {'Not Done': 'var(--not-started)', 'Not Started': 'var(--not-started)', 'In Progress': 'var(--c1)', 'Done': 'var(--done)', 'Completed': 'var(--done)'};
+    let gradParts = [];
+    let cumPct = 0;
+    actStatuses.forEach(s => {
+      const count = ws.activities.byStatus[s];
+      const pct = (count / totalAct * 100);
+      const color = actColors[s] || 'var(--c5)';
+      gradParts.push(`${color} ${cumPct}% ${cumPct + pct}%`);
+      cumPct += pct;
+      donutLegend += `<div class="legend-item"><div class="legend-dot" style="background:${color}"></div>${s} (${count})</div>`;
+    });
+    donutBg = `conic-gradient(${gradParts.join(', ')})`;
+  }
+  document.getElementById('donut').style.background = donutBg;
+  document.getElementById('donut-center').innerHTML = totalAct;
+  document.getElementById('donut-legend').innerHTML = donutLegend || '<div class="empty">No activities</div>';
+
+  let blockedHtml = '';
+  ws.cards.blocked.forEach(c => {
+    blockedHtml += `<tr><td>Card</td><td>${c.name}</td><td>${c.assignee}</td><td>${c.due}</td><td><span class="pill blocked">Blocked</span></td></tr>`;
+  });
+  ws.cards.overdue.forEach(c => {
+    blockedHtml += `<tr><td>Card</td><td>${c.name}</td><td>${c.assignee}</td><td>${c.due}</td><td><span class="pill overdue">Overdue</span></td></tr>`;
+  });
+  ws.activities.overdue.forEach(a => {
+    blockedHtml += `<tr><td>Activity</td><td>${a.name}</td><td>${a.assignee}</td><td>${a.due}</td><td><span class="pill overdue">Overdue</span></td></tr>`;
+  });
+  document.getElementById('blocked-tbody').innerHTML = blockedHtml || '<tr><td colspan="5" class="empty">✅ All clear!</td></tr>';
+
+  let milestonesHtml = '';
+  ws.milestones.forEach(m => {
+    milestonesHtml += `<tr><td>${m.name}</td><td>${m.due}</td><td>${m.owner}</td><td><span class="pill ${m.status}">${m.status}</span></td></tr>`;
+  });
+  document.getElementById('milestones-tbody').innerHTML = milestonesHtml || '<tr><td colspan="4" class="empty">No milestones</td></tr>';
+
+  let assignHtml = '';
+  ws.assignments.sort((a, b) => a.person.localeCompare(b.person) || (a.due || '9999').localeCompare(b.due || '9999'));
+  ws.assignments.forEach(a => {
+    const isOverdue = a.due && new Date(a.due) < new Date('2026-05-06');
+    assignHtml += `<tr class="${isOverdue ? 'overdue-row' : ''}"><td>${a.person}</td><td>${a.type}</td><td>${a.name}</td><td>${a.due || '-'}</td><td><span class="pill ${a.status}">${a.status}</span></td></tr>`;
+  });
+  document.getElementById('assignments-tbody').innerHTML = assignHtml || '<tr><td colspan="5" class="empty">No assignments</td></tr>';
+}
+
+window.onload = () => selectWorkspace(-1);
+</script>
+
+<div class="header">
+  <h1>ProjectPlace Dashboard</h1>
+  <div class="date">May 06, 2026</div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" onclick="selectWorkspace(-1)">All Workspaces</div>
+    <div class="tab" onclick="selectWorkspace(0)">Database Migration Project</div>
+    <div class="tab" onclick="selectWorkspace(1)">CoPilot Rollout</div>
+    <div class="tab" onclick="selectWorkspace(2)">Mobile Platform Migration</div>
+    <div class="tab" onclick="selectWorkspace(3)">SW Implementation Initiative</div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi" style="border-left-color:var(--c1)"><div class="value" id="kpi-cards">0</div><div class="label">Total Cards</div></div>
+    <div class="kpi" style="border-left-color:var(--blocked)"><div class="value" id="kpi-blocked">0</div><div class="label">Blocked</div></div>
+    <div class="kpi" style="border-left-color:var(--overdue)"><div class="value" id="kpi-overdue">0</div><div class="label">Overdue</div></div>
+    <div class="kpi" style="border-left-color:var(--c3)"><div class="value" id="kpi-activities">0</div><div class="label">Open Activities</div></div>
+    <div class="kpi" style="border-left-color:var(--c5)"><div class="value" id="kpi-milestones">0</div><div class="label">Milestones</div></div>
+    <div class="kpi" style="border-left-color:var(--done)"><div id="kpi-completion"></div><div class="label">Completion</div></div>
+  </div>
+
+  <div class="charts">
+    <div class="chart-card">
+      <div class="chart-title">Cards by Status</div>
+      <div id="bar-chart" class="bar-chart"></div>
+      <div id="bar-legend" class="legend"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Activities by Status</div>
+      <div id="donut" class="donut"><div id="donut-center" class="donut-center">0</div></div>
+      <div id="donut-legend" class="legend"></div>
+    </div>
+  </div>
+
+  <div class="tables">
+    <div class="table-card" style="border-left-color:var(--blocked)">
+      <div class="chart-title">Blocked & Overdue Items</div>
+      <div class="table-scroll">
+        <table><thead><tr><th>Type</th><th>Name</th><th>Assignee</th><th>Due Date</th><th>Status</th></tr></thead>
+        <tbody id="blocked-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="table-card" style="border-left-color:var(--c5)">
+      <div class="chart-title">Milestones</div>
+      <div class="table-scroll">
+        <table><thead><tr><th>Milestone</th><th>Due Date</th><th>Owner</th><th>Status</th></tr></thead>
+        <tbody id="milestones-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="assignments-card">
+    <div class="chart-title">Assignments by Person</div>
+    <div class="assignments-scroll">
+      <table><thead><tr><th>Person</th><th>Type</th><th>Item Name</th><th>Due Date</th><th>Status</th></tr></thead>
+      <tbody id="assignments-tbody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div class="footer">© 2025 Planview, Inc.</div>
+</body>
+</html>
