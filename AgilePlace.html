@@ -1,0 +1,462 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Dashboard — Agile Metrics</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
+:root {
+  --bg: #F2F3F5; --card-bg: #FFFFFF; --border: #E4E7EB;
+  --text: #3B3F46; --text-light: #8A9099;
+  --shadow: 0 1px 4px rgba(0,0,0,0.06);
+  --c1: #2171C4; --c2: #5BC0EB; --c3: #36B5A0; --c4: #4BC86E;
+  --c5: #F5C242; --c6: #F09030; --c7: #E85D75; --c8: #E8368F;
+  --c9: #7B68B4; --c10: #2AABBF;
+  --done: #4BC86E; --progress: #2171C4; --blocked: #E85D75;
+  --overdue: #F09030; --not-started: #C5CAD0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Open Sans', sans-serif; background: var(--bg); color: var(--text); }
+.header { background: var(--card-bg); height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+.header h1 { font-size: 16px; font-weight: 700; }
+.header .date { font-size: 12px; color: var(--text-light); }
+.tabs { display: flex; gap: 8px; padding: 16px 24px; background: var(--card-bg); border-bottom: 1px solid var(--border); }
+.tab { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--card-bg); transition: all 0.2s; }
+.tab.active { background: var(--c1); color: white; border-color: var(--c1); }
+.container { padding: 24px; max-width: 1400px; margin: 0 auto; }
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.kpi-card { background: var(--card-bg); padding: 20px; border-radius: 6px; box-shadow: var(--shadow); border-left: 3px solid; }
+.kpi-card .value { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+.kpi-card .label { font-size: 12px; color: var(--text-light); }
+.card { background: var(--card-bg); padding: 20px; border-radius: 6px; box-shadow: var(--shadow); margin-bottom: 16px; }
+.card-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); }
+.epic-card { background: var(--card-bg); padding: 16px; border-radius: 6px; box-shadow: var(--shadow); margin-bottom: 12px; border-left: 3px solid var(--c1); }
+.epic-card.blocked { border-left-color: var(--blocked); }
+.epic-card.overdue { border-left-color: var(--overdue); }
+.epic-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.epic-name { font-size: 14px; font-weight: 600; }
+.epic-meta { display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--text-light); }
+.pill { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+.pill.high { background: #FFE5E5; color: #E85D75; }
+.pill.critical { background: #FFE5E5; color: #E85D75; }
+.pill.normal { background: #E8F4FD; color: #2171C4; }
+.pill.low { background: #F0F0F0; color: #8A9099; }
+.pill.blocked { background: #FFE5E5; color: #E85D75; }
+.pill.done { background: #E8F9F0; color: #4BC86E; }
+.pill.progress { background: #E8F4FD; color: #2171C4; }
+.pill.exceeded { background: #FFE5E5; color: #E85D75; }
+.pill.ok { background: #E8F9F0; color: #4BC86E; }
+.progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; display: flex; margin: 8px 0; }
+.progress-seg { height: 100%; }
+.progress-seg.done { background: var(--done); }
+.progress-seg.progress { background: var(--progress); }
+.progress-seg.blocked { background: var(--blocked); }
+.progress-seg.todo { background: var(--not-started); }
+.epic-summary { font-size: 11px; color: var(--text-light); }
+.scroll-container { max-height: 350px; overflow-y: auto; }
+.chart-container { position: relative; height: 180px; }
+.bar-chart { display: flex; align-items: flex-end; justify-content: space-around; height: 150px; gap: 8px; }
+.bar-group { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.bar-pair { display: flex; gap: 2px; align-items: flex-end; }
+.bar { width: 16px; border-radius: 3px 3px 0 0; position: relative; }
+.bar-label { font-size: 9px; font-weight: 700; margin-top: 4px; }
+.week-label { font-size: 9px; color: var(--text-light); margin-top: 4px; }
+.legend { display: flex; gap: 16px; font-size: 11px; margin-top: 12px; align-items: center; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.avg-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--text-light); }
+.avg-label { position: absolute; right: 8px; font-size: 9px; color: var(--text-light); background: var(--card-bg); padding: 0 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: left; padding: 8px; border-bottom: 2px solid var(--border); font-weight: 600; color: var(--text-light); font-size: 11px; }
+td { padding: 8px; border-bottom: 1px solid var(--border); }
+.table-scroll { max-height: 250px; overflow-y: auto; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.footer { background: var(--card-bg); border-top: 1px solid var(--border); padding: 16px; text-align: center; font-size: 10px; color: var(--text-light); margin-top: 24px; }
+.view { display: none; }
+.view.active { display: block; }
+.donut { width: 40px; height: 40px; border-radius: 50%; background: conic-gradient(var(--done) 0deg, var(--done) calc(var(--pct)  3.6deg), var(--border) calc(var(--pct)  3.6deg)); display: inline-block; }
+.histogram { display: flex; flex-direction: column; gap: 8px; }
+.hist-bar { display: flex; align-items: center; gap: 8px; }
+.hist-label { font-size: 11px; width: 80px; color: var(--text-light); }
+.hist-fill { height: 20px; border-radius: 3px; display: flex; align-items: center; padding: 0 8px; font-size: 10px; font-weight: 600; color: white; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Portfolio Dashboard — Agile Metrics</h1>
+  <div class="date">May 07, 2026</div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="selectView('portfolio')">Portfolio Overview</div>
+  <div class="tab" onclick="selectView('avengers')">Avengers Kanban</div>
+  <div class="tab" onclick="selectView('justice')">Justice League Kanban</div>
+</div>
+<div class="container">
+  <div id="view-portfolio" class="view active">
+    <div class="kpi-row">
+      <div class="kpi-card" style="border-left-color: var(--c1);">
+        <div class="value">17</div>
+        <div class="label">Epics</div>
+      </div>
+      <div class="kpi-card" style="border-left-color: var(--c2);">
+        <div class="value">106</div>
+        <div class="label">Features</div>
+      </div>
+      <div class="kpi-card" style="border-left-color: var(--blocked);">
+        <div class="value" style="color: var(--blocked);">3</div>
+        <div class="label">Blocked</div>
+      </div>
+      <div class="kpi-card" style="border-left-color: var(--overdue);">
+        <div class="value" style="color: var(--overdue);">0</div>
+        <div class="label">Overdue</div>
+      </div>
+      <div class="kpi-card" style="border-left-color: var(--c3);">
+        <div class="value">18.3</div>
+        <div class="label">Velocity (pts/wk)</div>
+      </div>
+      <div class="kpi-card" style="border-left-color: var(--c9);">
+        <div class="value">4.8</div>
+        <div class="label">Throughput (cards/wk)</div>
+      </div>
+      <div class="kpi-card" style="border-left-color: var(--c5);">
+        <div class="value">12.6</div>
+        <div class="label">Avg Cycle Time (days)</div>
+      </div>
+      <div class="kpi-card" style="border-left-color: var(--done);">
+        <div class="value">35%</div>
+        <div class="label">Completion</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Epic Progress</div>
+      <div class="scroll-container">
+        <div class="epic-card blocked">
+          <div class="epic-header">
+            <div class="epic-name">NGSD CyberSecurity</div>
+            <div class="epic-meta">
+              <span class="pill critical">Critical</span>
+              <span class="pill blocked">Blocked</span>
+              <span>Stephen Hill</span>
+              <span>Target: Aug 19, 2026</span>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-seg done" style="width: 25%;"></div>
+            <div class="progress-seg progress" style="width: 50%;"></div>
+            <div class="progress-seg blocked" style="width: 10%;"></div>
+            <div class="progress-seg todo" style="width: 15%;"></div>
+          </div>
+          <div class="epic-summary">2/8 features (12/48 pts) | Avengers: 2/8</div>
+        </div>
+        <div class="epic-card blocked">
+          <div class="epic-header">
+            <div class="epic-name">Personalize Experience-Strategic Customer</div>
+            <div class="epic-meta">
+              <span class="pill critical">Critical</span>
+              <span class="pill blocked">Blocked</span>
+              <span>Stephen Hill</span>
+              <span>Target: Jun 29, 2026</span>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-seg done" style="width: 20%;"></div>
+            <div class="progress-seg progress" style="width: 40%;"></div>
+            <div class="progress-seg blocked" style="width: 20%;"></div>
+            <div class="progress-seg todo" style="width: 20%;"></div>
+          </div>
+          <div class="epic-summary">1/5 features (8/40 pts) | Avengers: 1/5</div>
+        </div>
+        <div class="epic-card">
+          <div class="epic-header">
+            <div class="epic-name">Improve Mobile Experience</div>
+            <div class="epic-meta">
+              <span class="pill critical">Critical</span>
+              <span>Target: Nov 25, 2026</span>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-seg done" style="width: 40%;"></div>
+            <div class="progress-seg progress" style="width: 40%;"></div>
+            <div class="progress-seg todo" style="width: 20%;"></div>
+          </div>
+          <div class="epic-summary">4/10 features (45/125 pts) | Avengers: 4/10</div>
+        </div>
+        <div class="epic-card">
+          <div class="epic-header">
+            <div class="epic-name">Crowd Innovation Platform Epic</div>
+            <div class="epic-meta">
+              <span class="pill high">High</span>
+              <span>Allen Partin</span>
+              <span>Target: Apr 03, 2026</span>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-seg done" style="width: 60%;"></div>
+            <div class="progress-seg progress" style="width: 30%;"></div>
+            <div class="progress-seg todo" style="width: 10%;"></div>
+          </div>
+          <div class="epic-summary">6/10 features (52/87 pts) | Avengers: 6/10</div>
+        </div>
+        <div class="epic-card">
+          <div class="epic-header">
+            <div class="epic-name">Extend Security Layers and Controls (ADO)</div>
+            <div class="epic-meta">
+              <span class="pill normal">Normal</span>
+              <span>Target: Oct 08, 2025</span>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-seg done" style="width: 30%;"></div>
+            <div class="progress-seg progress" style="width: 50%;"></div>
+            <div class="progress-seg todo" style="width: 20%;"></div>
+          </div>
+          <div class="epic-summary">3/10 features (60/200 pts) | Justice League: 3/10</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Velocity — Last 12 Weeks (Points Completed)</div>
+      <div class="bar-chart">
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 90px; background: var(--c1);"><div class="bar-label">18</div></div><div class="bar" style="height: 60px; background: var(--c9);"><div class="bar-label">12</div></div></div><div class="week-label">W1</div></div>
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 105px; background: var(--c1);"><div class="bar-label">21</div></div><div class="bar" style="height: 75px; background: var(--c9);"><div class="bar-label">15</div></div></div><div class="week-label">W2</div></div>
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 80px; background: var(--c1);"><div class="bar-label">16</div></div><div class="bar" style="height: 50px; background: var(--c9);"><div class="bar-label">10</div></div></div><div class="week-label">W3</div></div>
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 125px; background: var(--c1);"><div class="bar-label">25</div></div><div class="bar" style="height: 85px; background: var(--c9);"><div class="bar-label">17</div></div></div><div class="week-label">W4</div></div>
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 70px; background: var(--c1);"><div class="bar-label">14</div></div><div class="bar" style="height: 55px; background: var(--c9);"><div class="bar-label">11</div></div></div><div class="week-label">W5</div></div>
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 95px; background: var(--c1);"><div class="bar-label">19</div></div><div class="bar" style="height: 65px; background: var(--c9);"><div class="bar-label">13</div></div></div><div class="week-label">W6</div></div>
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 110px; background: var(--c1);"><div class="bar-label">22</div></div><div class="bar" style="height: 70px; background: var(--c9);"><div class="bar-label">14</div></div></div><div class="week-label">W7</div></div>
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 85px; background: var(--c1);"><div class="bar-label">17</div></div><div class="bar" style="height: 60px; background: var(--c9);"><div class="bar-label">12</div></div></div><div class="week-label">W8</div></div>
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 100px; background: var(--c1);"><div class="bar-label">20</div></div><div class="bar" style="height: 80px; background: var(--c9);"><div class="bar-label">16</div></div></div><div class="week-label">W9</div></div>
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 115px; background: var(--c1);"><div class="bar-label">23</div></div><div class="bar" style="height: 75px; background: var(--c9);"><div class="bar-label">15</div></div></div><div class="week-label">W10</div></div>
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 90px; background: var(--c1);"><div class="bar-label">18</div></div><div class="bar" style="height: 65px; background: var(--c9);"><div class="bar-label">13</div></div></div><div class="week-label">W11</div></div>
+        <div class="bar-group"><div class="bar-pair"><div class="bar" style="height: 105px; background: var(--c1);"><div class="bar-label">21</div></div><div class="bar" style="height: 70px; background: var(--c9);"><div class="bar-label">14</div></div></div><div class="week-label">W12</div></div>
+      </div>
+      <div class="legend">
+        <span><span class="legend-dot" style="background: var(--c1);"></span>Avengers</span>
+        <span><span class="legend-dot" style="background: var(--c9);"></span>Justice League</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Throughput — Last 12 Weeks (Cards Completed)</div>
+      <div class="bar-chart">
+        <div class="bar-group"><div class="bar" style="height: 80px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 60%, var(--c9) 60%, var(--c9) 100%);"></div><div class="week-label">W1</div></div>
+        <div class="bar-group"><div class="bar" style="height: 100px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 55%, var(--c9) 55%, var(--c9) 100%);"></div><div class="week-label">W2</div></div>
+        <div class="bar-group"><div class="bar" style="height: 70px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 65%, var(--c9) 65%, var(--c9) 100%);"></div><div class="week-label">W3</div></div>
+        <div class="bar-group"><div class="bar" style="height: 110px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 58%, var(--c9) 58%, var(--c9) 100%);"></div><div class="week-label">W4</div></div>
+        <div class="bar-group"><div class="bar" style="height: 65px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 62%, var(--c9) 62%, var(--c9) 100%);"></div><div class="week-label">W5</div></div>
+        <div class="bar-group"><div class="bar" style="height: 85px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 60%, var(--c9) 60%, var(--c9) 100%);"></div><div class="week-label">W6</div></div>
+        <div class="bar-group"><div class="bar" style="height: 95px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 57%, var(--c9) 57%, var(--c9) 100%);"></div><div class="week-label">W7</div></div>
+        <div class="bar-group"><div class="bar" style="height: 75px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 63%, var(--c9) 63%, var(--c9) 100%);"></div><div class="week-label">W8</div></div>
+        <div class="bar-group"><div class="bar" style="height: 90px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 59%, var(--c9) 59%, var(--c9) 100%);"></div><div class="week-label">W9</div></div>
+        <div class="bar-group"><div class="bar" style="height: 105px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 56%, var(--c9) 56%, var(--c9) 100%);"></div><div class="week-label">W10</div></div>
+        <div class="bar-group"><div class="bar" style="height: 80px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 61%, var(--c9) 61%, var(--c9) 100%);"></div><div class="week-label">W11</div></div>
+        <div class="bar-group"><div class="bar" style="height: 95px; background: linear-gradient(to top, var(--c1) 0%, var(--c1) 58%, var(--c9) 58%, var(--c9) 100%);"></div><div class="week-label">W12</div></div>
+      </div>
+      <div class="legend">
+        <span><span class="legend-dot" style="background: var(--c1);"></span>Avengers</span>
+        <span><span class="legend-dot" style="background: var(--c9);"></span>Justice League</span>
+      </div>
+    </div>
+  </div>
+  <div id="view-avengers" class="view">
+    <div class="kpi-row">
+      <div class="kpi-card" style="border-left-color: var(--c1);"><div class="value">85</div><div class="label">Features</div></div>
+      <div class="kpi-card" style="border-left-color: var(--blocked);"><div class="value" style="color: var(--blocked);">0</div><div class="label">Blocked</div></div>
+      <div class="kpi-card" style="border-left-color: var(--overdue);"><div class="value">0</div><div class="label">Overdue</div></div>
+      <div class="kpi-card" style="border-left-color: var(--c3);"><div class="value">19.5</div><div class="label">Velocity (pts/wk)</div></div>
+      <div class="kpi-card" style="border-left-color: var(--c9);"><div class="value">5.2</div><div class="label">Throughput (cards/wk)</div></div>
+      <div class="kpi-card" style="border-left-color: var(--c5);"><div class="value">11.8</div><div class="label">Avg Cycle Time</div></div>
+      <div class="kpi-card" style="border-left-color: var(--c6);"><div class="value">18.3</div><div class="label">Avg Lead Time</div></div>
+      <div class="kpi-card" style="border-left-color: var(--c2);"><div class="value">46</div><div class="label">WIP</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Burnup — Last 12 Weeks</div>
+      <svg width="100%" height="180" viewBox="0 0 600 180">
+        <polyline points="50,150 100,140 150,135 200,125 250,120 300,110 350,105 400,95 450,90 500,80 550,75 600,70" fill="none" stroke="var(--c6)" stroke-width="2"/>
+        <polyline points="50,160 100,155 150,148 200,142 250,135 300,128 350,120 400,112 450,105 500,98 550,90 600,83" fill="none" stroke="var(--done)" stroke-width="2"/>
+        <text x="30" y="155" font-size="10" fill="var(--text-light)">0</text>
+        <text x="30" y="80" font-size="10" fill="var(--text-light)">85</text>
+      </svg>
+      <div class="legend">
+        <span style="color: var(--c6);">— Scope</span>
+        <span style="color: var(--done);">— Done</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Burndown — Remaining Work</div>
+      <svg width="100%" height="180" viewBox="0 0 600 180">
+        <line x1="50" y1="30" x2="600" y2="150" stroke="var(--text-light)" stroke-width="1" stroke-dasharray="4"/>
+        <polyline points="50,30 100,35 150,38 200,42 250,45 300,50 350,55 400,62 450,68 500,75 550,82 600,90" fill="none" stroke="var(--c7)" stroke-width="2"/>
+        <text x="30" y="35" font-size="10" fill="var(--text-light)">46</text>
+        <text x="30" y="155" font-size="10" fill="var(--text-light)">0</text>
+      </svg>
+      <div class="legend">
+        <span style="color: var(--c7);">— Remaining</span>
+        <span style="color: var(--text-light);">- - Ideal</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Cycle Time Distribution</div>
+      <div class="histogram">
+        <div class="hist-bar"><div class="hist-label">0-5 days</div><div class="hist-fill" style="width: 180px; background: var(--done);">12</div></div>
+        <div class="hist-bar"><div class="hist-label">6-10 days</div><div class="hist-fill" style="width: 240px; background: var(--c4);">16</div></div>
+        <div class="hist-bar"><div class="hist-label">11-15 days</div><div class="hist-fill" style="width: 210px; background: var(--c5);">14</div></div>
+        <div class="hist-bar"><div class="hist-label">16-20 days</div><div class="hist-fill" style="width: 150px; background: var(--c6);">10</div></div>
+        <div class="hist-bar"><div class="hist-label">21-30 days</div><div class="hist-fill" style="width: 90px; background: var(--c7);">6</div></div>
+        <div class="hist-bar"><div class="hist-label">30+ days</div><div class="hist-fill" style="width: 45px; background: var(--blocked);">3</div></div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">WIP by Lane</div>
+        <div class="table-scroll">
+          <table>
+            <tr><th>Lane</th><th>Current</th><th>Limit</th><th>Status</th></tr>
+            <tr><td>Feedback</td><td>6</td><td>8</td><td><span class="pill ok">OK</span></td></tr>
+            <tr><td>Planned</td><td>11</td><td>10</td><td><span class="pill exceeded">Exceeded</span></td></tr>
+            <tr><td>Doing</td><td>2</td><td>5</td><td><span class="pill ok">OK</span></td></tr>
+            <tr><td>Ready to Deploy</td><td>5</td><td>6</td><td><span class="pill ok">OK</span></td></tr>
+            <tr><td>Deployed</td><td>8</td><td>10</td><td><span class="pill ok">OK</span></td></tr>
+            <tr><td>Learn</td><td>7</td><td>8</td><td><span class="pill ok">OK</span></td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Blocked & Overdue</div>
+        <div class="table-scroll">
+          <table>
+            <tr><th>Feature</th><th>Assignee</th><th>Status</th></tr>
+            <tr><td colspan="3" style="text-align: center; color: var(--text-light);">No blocked or overdue items</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Feature Details</div>
+      <div class="table-scroll">
+        <table>
+          <tr><th>Feature</th><th>Parent Epic</th><th>Assignee</th><th>Lane</th><th>Points</th><th>Priority</th><th>Status</th></tr>
+          <tr><td>New Jira Feature</td><td>NGSD CyberSecurity</td><td>AJ Shavell</td><td>Doing</td><td>10</td><td><span class="pill critical">Critical</span></td><td><span class="pill progress">In Progress</span></td></tr>
+          <tr><td>Mobile Two Factor Authentication</td><td>Improve Mobile Experience</td><td>Stephen Hill</td><td>Ready</td><td>25</td><td><span class="pill normal">Normal</span></td><td><span class="pill progress">In Progress</span></td></tr>
+          <tr><td>Wealth Manager UX</td><td>Improve Mobile Experience</td><td>-</td><td>Planned</td><td>40</td><td><span class="pill high">High</span></td><td><span class="pill progress">In Progress</span></td></tr>
+          <tr><td>Crowd Source Platform Feature</td><td>Crowd Innovation Platform Epic</td><td>Allen Partin, Maritza Garcia</td><td>Deployed</td><td>10</td><td><span class="pill critical">Critical</span></td><td><span class="pill done">Done</span></td></tr>
+          <tr><td>NGSD Feature</td><td>NGSD CyberSecurity</td><td>Haley Brown, Bob DeMaria</td><td>Ready to Deploy</td><td>15</td><td><span class="pill normal">Normal</span></td><td><span class="pill done">Done</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div id="view-justice" class="view">
+    <div class="kpi-row">
+      <div class="kpi-card" style="border-left-color: var(--c1);"><div class="value">34</div><div class="label">Features</div></div>
+      <div class="kpi-card" style="border-left-color: var(--blocked);"><div class="value" style="color: var(--blocked);">1</div><div class="label">Blocked</div></div>
+      <div class="kpi-card" style="border-left-color: var(--overdue);"><div class="value">0</div><div class="label">Overdue</div></div>
+      <div class="kpi-card" style="border-left-color: var(--c3);"><div class="value">13.8</div><div class="label">Velocity (pts/wk)</div></div>
+      <div class="kpi-card" style="border-left-color: var(--c9);"><div class="value">3.5</div><div class="label">Throughput (cards/wk)</div></div>
+      <div class="kpi-card" style="border-left-color: var(--c5);"><div class="value">14.2</div><div class="label">Avg Cycle Time</div></div>
+      <div class="kpi-card" style="border-left-color: var(--c6);"><div class="value">21.7</div><div class="label">Avg Lead Time</div></div>
+      <div class="kpi-card" style="border-left-color: var(--c2);"><div class="value">15</div><div class="label">WIP</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Burnup — Last 12 Weeks</div>
+      <svg width="100%" height="180" viewBox="0 0 600 180">
+        <polyline points="50,140 100,135 150,130 200,125 250,118 300,112 350,105 400,98 450,92 500,85 550,78 600,72" fill="none" stroke="var(--c6)" stroke-width="2"/>
+        <polyline points="50,155 100,150 150,145 200,138 250,132 300,125 350,118 400,110 450,103 500,95 550,88 600,80" fill="none" stroke="var(--done)" stroke-width="2"/>
+        <text x="30" y="145" font-size="10" fill="var(--text-light)">0</text>
+        <text x="30" y="75" font-size="10" fill="var(--text-light)">34</text>
+      </svg>
+      <div class="legend">
+        <span style="color: var(--c6);">— Scope</span>
+        <span style="color: var(--done);">— Done</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Burndown — Remaining Work</div>
+      <svg width="100%" height="180" viewBox="0 0 600 180">
+        <line x1="50" y1="40" x2="600" y2="150" stroke="var(--text-light)" stroke-width="1" stroke-dasharray="4"/>
+        <polyline points="50,40 100,42 150,45 200,48 250,52 300,56 350,62 400,68 450,75 500,82 550,90 600,98" fill="none" stroke="var(--c7)" stroke-width="2"/>
+        <text x="30" y="45" font-size="10" fill="var(--text-light)">19</text>
+        <text x="30" y="155" font-size="10" fill="var(--text-light)">0</text>
+      </svg>
+      <div class="legend">
+        <span style="color: var(--c7);">— Remaining</span>
+        <span style="color: var(--text-light);">- - Ideal</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Cycle Time Distribution</div>
+      <div class="histogram">
+        <div class="hist-bar"><div class="hist-label">0-5 days</div><div class="hist-fill" style="width: 120px; background: var(--done);">8</div></div>
+        <div class="hist-bar"><div class="hist-label">6-10 days</div><div class="hist-fill" style="width: 150px; background: var(--c4);">10</div></div>
+        <div class="hist-bar"><div class="hist-label">11-15 days</div><div class="hist-fill" style="width: 135px; background: var(--c5);">9</div></div>
+        <div class="hist-bar"><div class="hist-label">16-20 days</div><div class="hist-fill" style="width: 90px; background: var(--c6);">6</div></div>
+        <div class="hist-bar"><div class="hist-label">21-30 days</div><div class="hist-fill" style="width: 60px; background: var(--c7);">4</div></div>
+        <div class="hist-bar"><div class="hist-label">30+ days</div><div class="hist-fill" style="width: 30px; background: var(--blocked);">2</div></div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">WIP by Lane</div>
+        <div class="table-scroll">
+          <table>
+            <tr><th>Lane</th><th>Current</th><th>Limit</th><th>Status</th></tr>
+            <tr><td>Testing</td><td>3</td><td>5</td><td><span class="pill ok">OK</span></td></tr>
+            <tr><td>Deploying</td><td>1</td><td>3</td><td><span class="pill ok">OK</span></td></tr>
+            <tr><td>Doing</td><td>2</td><td>4</td><td><span class="pill ok">OK</span></td></tr>
+            <tr><td>Backlog</td><td>3</td><td>8</td><td><span class="pill ok">OK</span></td></tr>
+            <tr><td>Committed</td><td>7</td><td>6</td><td><span class="pill exceeded">Exceeded</span></td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Blocked & Overdue</div>
+        <div class="table-scroll">
+          <table>
+            <tr><th>Feature</th><th>Assignee</th><th>Status</th></tr>
+            <tr><td>New Security Standards released</td><td>-</td><td><span class="pill blocked">Blocked</span></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Feature Details</div>
+      <div class="table-scroll">
+        <table>
+          <tr><th>Feature</th><th>Parent Epic</th><th>Assignee</th><th>Lane</th><th>Points</th><th>Priority</th><th>Status</th></tr>
+          <tr><td>Security Feature I</td><td>Extend Security Layers</td><td>-</td><td>Testing</td><td>10</td><td><span class="pill normal">Normal</span></td><td><span class="pill progress">In Progress</span></td></tr>
+          <tr><td>My Wealth Manager UX</td><td>Transformation of CX</td><td>-</td><td>Deploying</td><td>10</td><td><span class="pill normal">Normal</span></td><td><span class="pill progress">In Progress</span></td></tr>
+          <tr><td>Cloud Configuration Monitoring Update</td><td>Extend Security Layers</td><td>-</td><td>Testing</td><td>25</td><td><span class="pill normal">Normal</span></td><td><span class="pill progress">In Progress</span></td></tr>
+          <tr><td>RSA Upgrades</td><td>Extend Security Layers</td><td>-</td><td>Committed</td><td>55</td><td><span class="pill low">Low</span></td><td><span class="pill">Backlog</span></td></tr>
+          <tr><td>Advanced Encryption Standard (AES)</td><td>Extend Security Layers</td><td>-</td><td>Committed</td><td>10</td><td><span class="pill normal">Normal</span></td><td><span class="pill">Backlog</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">© 2025 Planview, Inc.</div>
+<script>
+function safeCount(val) {
+  if (Array.isArray(val)) return val.length;
+  if (val && typeof val === 'object') return Object.keys(val).length;
+  return typeof val === 'number' ? val : 0;
+}
+function safeFixed(val, decimals) {
+  return typeof val === 'number' ? val.toFixed(decimals || 1) : '0';
+}
+function selectView(viewName) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  if (viewName === 'portfolio') {
+    document.querySelectorAll('.tab')[0].classList.add('active');
+    document.getElementById('view-portfolio').classList.add('active');
+  } else if (viewName === 'avengers') {
+    document.querySelectorAll('.tab')[1].classList.add('active');
+    document.getElementById('view-avengers').classList.add('active');
+  } else if (viewName === 'justice') {
+    document.querySelectorAll('.tab')[2].classList.add('active');
+    document.getElementById('view-justice').classList.add('active');
+  }
+}
+selectView('portfolio');
+</script>
+</body>
+</html>
